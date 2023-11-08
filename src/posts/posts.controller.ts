@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 
+// Just 요청 받은것을 라우팅 해주는 부분!
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
