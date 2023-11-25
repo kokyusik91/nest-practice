@@ -1,11 +1,9 @@
+import { BaseModel } from 'src/common/entity/base.entity';
 import { UsersModel } from 'src/users/entities/users.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 
 @Entity()
-export class PostsModel {
-  // 자동으로 postsql에서 자동으로 id를 1씩 올려준다. + 유니크한 id값
-  @PrimaryGeneratedColumn()
-  id: number;
+export class PostsModel extends BaseModel {
   @ManyToOne(() => UsersModel, (user) => user.posts, {
     nullable: false,
   })
