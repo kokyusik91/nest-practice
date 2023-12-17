@@ -10,7 +10,6 @@ export const User = createParamDecorator(
   (data: keyof UsersModel | undefined, context: ExecutionContext) => {
     // 요청 가져오기
     const req = context.switchToHttp().getRequest();
-
     const user = req.user as UsersModel;
 
     // 서버에서 잘못한 거다!
@@ -20,7 +19,8 @@ export const User = createParamDecorator(
       );
     }
 
-    if (!data) {
+    if (data) {
+      console.log('userId', user[data]);
       return user[data];
     }
 
