@@ -18,6 +18,7 @@ export class PaginatePostDto {
   // 정렬
   // createdAt -> 생성된 시간의 내림차/오름차 순으로 정렬
   // list에 있는 값들만 허용이 된다.
+  // 예시) 'ASC'와 'DESC'만 들어와야 validation pass가 된다.
   @IsIn(['ASC', 'DESC'])
   @IsOptional()
   // eslint-disable-next-line @typescript-eslint/prefer-as-const

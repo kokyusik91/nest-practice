@@ -66,9 +66,11 @@ export class PostsService {
     if (dto.where__id_less_than) {
       where.id = LessThan(dto.where__id_less_than);
     } else if (dto.where__id_more_than) {
+      // 클라이언트에 넘겨준 lastId보다 더 큰 id값들만 가져온다.
       where.id = MoreThan(dto.where__id_more_than);
     }
 
+    // DB에서 Post 조회
     const posts = await this.postsRepository.find({
       where,
       // order__createdAt
@@ -78,16 +80,21 @@ export class PostsService {
       take: dto.take,
     });
 
-    // 해당되는 포스트가 0개 이상이면, 마지막 포스트를 가져오고 아니면 null 반환
+    // DB에서 post를 조회 했을때 해당되는 포스트가 0개 이상이면, 마지막 포스트를 가져오고 아니면 null 반환
+    // 추가 로직 DB에서 가져온 posts의 갯수와 요청하는 take값이 같을 경우 다음 페이지가 있다라는 것
     const lastItem =
       posts.length > 0 && posts.length === dto.take ? posts.at(-1) : null;
 
     const nextUrl = lastItem && new URL(`${PROTOCOL}://${HOST}/posts`);
 
+    // url을 만드는 로직
     if (nextUrl) {
-      //
+      /**
+       * dto의 키값들을 looping 하면서, 키값에 해당되는 value가 존재하면, param에 그대로 붙여넣는다.
+       */
       for (const key of Object.keys(dto)) {
         if (dto[key]) {
+          // where__id_more_than과 where__id_less_than 키값이 아닐경우 (해당 키값은 아래서 핸들링 할거임.)
           if (key !== 'where__id_more_than' && key !== 'where__id_less_than') {
             nextUrl.searchParams.append(key, dto[key]);
           }
