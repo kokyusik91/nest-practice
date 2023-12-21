@@ -17,10 +17,21 @@ import {
   ENV_DB_PORT_KEY,
   ENV_DB_USERNAME_KEY,
 } from './common/const/env-keys.const';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
 
 @Module({
   imports: [
     PostsModule,
+    ServeStaticModule.forRoot({
+      // 파일들을 서빙할 최상단 루트 폴더의 절대 경로
+      // root Path만 추가하게되면 다음과 같은 주소형태로 서빙된다.
+      // http://localhost:3000/posts/4022.jpg -> 이렇게 되면 getPosts 요청과 겹치게 된다 ❌
+      rootPath: PUBLIC_FOLDER_PATH,
+      // serve Root를 추가해주면 다음과 같은 주소형태로 서빙된다.
+      // http://localhost:3000/public/posts/4022.jpg
+      serveRoot: '/public',
+    }),
     ConfigModule.forRoot({
       envFilePath: '.env',
       // 어디서든 사용할 수 있게
