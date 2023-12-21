@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -51,12 +50,11 @@ export class PostsController {
   // AccessToken 없이는 밑에 로직이 실행되지 않는다.
   @UseGuards(AccessTokenGuard)
   @UseInterceptors(FileInterceptor('image'))
-  postPosts(
+  async postPosts(
     // 커스텀 데코레이터에서 req에 접근해 한번더 검증하고, user를 반환한다.
     @User('id') userId: number,
     // @Body('authorId') authorId: number,
     @Body() body: CreatePostDto,
-    @UploadedFile() file?: Express.Multer.File,
     // @Body('title') title: string,
     // @Body('content') content: string,
     // public에 노출 시킬건지 아닌지를 받는 값인데, 넘기지 않으면 DefaultValuePipe에서 미리 설정해 줄 수 있다.
@@ -64,8 +62,11 @@ export class PostsController {
   ) {
     // 이미 AccessTokenGuard에서, 토큰 검증후 request header에 user 객체를 할당해 놓았기 때문에, user의 id에 접근이 가능하다.
     // AccessTokenGuard에서 통과한다면, 절대적으로 user가 들어있을 수 밖에 없다.
-    console.log(userId);
-    return this.postsService.createPost(userId, body, file?.filename);
+
+    await this.postsService.createPostImage(body);
+
+    // 옮겨지면 아래 로직 실행
+    return this.postsService.createPost(userId, body);
   }
 
   @Patch(':id')
