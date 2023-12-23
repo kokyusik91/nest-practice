@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  // UseFilters,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,6 +27,7 @@ import { PostsImagesService } from './images.service';
 import { LogInterceptor } from 'src/common/interceptor/log.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
+// import { HttpExceptionFilter } from 'src/common/exception-filter/http.exception-filter';
 // import { UsersModel } from 'src/users/entities/users.entity';
 
 // Just 요청 받은것을 라우팅 해주는 부분!
@@ -39,6 +41,7 @@ export class PostsController {
 
   @Get()
   @UseInterceptors(LogInterceptor)
+  // @UseFilters(HttpExceptionFilter)
   getPosts(@Query() query: PaginatePostDto) {
     return this.postsService.paginatePosts(query);
   }
