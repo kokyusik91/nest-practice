@@ -20,3 +20,15 @@ import { PostsImagesService } from './images.service';
   providers: [PostsService, PostsImagesService],
 })
 export class PostsModule {}
+
+// export class PostsModule implements NestModule {
+//   configure(consumer: MiddlewareConsumer) {
+//     consumer.apply(LogMiddleware).forRoutes({
+//       // 미들웨어를 실행시키고 싶은 라우트 path (정확히 posts로 해당되는 path만 )
+//       // {posts* 를하면, 모든 posts요청}
+//       path: 'posts*',
+//       //  어떤 HTTP 메서드에서 실행시키고 싶은지?
+//       method: RequestMethod.GET,
+//     });
+//   }
+// }
