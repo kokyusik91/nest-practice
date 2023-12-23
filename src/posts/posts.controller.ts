@@ -24,6 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageModelType } from 'src/common/entity/image.entity';
 import { DataSource } from 'typeorm';
 import { PostsImagesService } from './images.service';
+import { LogInterceptor } from 'src/common/interceptor/log.interceptor';
 // import { UsersModel } from 'src/users/entities/users.entity';
 
 // Just 요청 받은것을 라우팅 해주는 부분!
@@ -36,6 +37,7 @@ export class PostsController {
   ) {}
 
   @Get()
+  @UseInterceptors(LogInterceptor)
   getPosts(@Query() query: PaginatePostDto) {
     return this.postsService.paginatePosts(query);
   }
