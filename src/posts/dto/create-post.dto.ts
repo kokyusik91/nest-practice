@@ -8,7 +8,9 @@ import { IsOptional, IsString } from 'class-validator';
 // extends는 값을 넣어줘야한다.
 
 export class CreatePostDto extends PickType(PostsModel, ['title', 'content']) {
-  @IsString()
+  @IsString({
+    each: true,
+  })
   @IsOptional()
-  image?: string;
+  images: string[] = [];
 }
