@@ -9,6 +9,7 @@ import { stringValidationMessage } from 'src/common/validation-message/string-va
 import { emailValidationMessage } from 'src/common/validation-message/email-validation.message';
 import { Exclude } from 'class-transformer';
 import { ChatsModel } from 'src/chats/entities/chat.entity';
+import { MessagesModel } from 'src/chats/messages/entity/message.entity';
 
 @Entity()
 export class UsersModel extends BaseModel {
@@ -69,4 +70,7 @@ export class UsersModel extends BaseModel {
   @ManyToMany(() => ChatsModel, (chat) => chat.users)
   @JoinTable()
   chats: ChatsModel;
+
+  @OneToMany(() => MessagesModel, (message) => message.author)
+  messages: MessagesModel;
 }
