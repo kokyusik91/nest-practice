@@ -15,6 +15,15 @@ import { ChatsService } from './chats.service';
 import { EnterChatDto } from './dto/enter-chat.dto';
 import { CreateMessageDto } from './messages/dto/create-messages.dto';
 import { ChatsMessagesService } from './messages/message.service';
+import {
+  UseFilters,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { SocketCatchHttpExceptionFilter } from 'src/common/exception-filter/socket-cath-http.exception-filter';
+import { SocketBearerTokenGuard } from 'src/auth/guard/socket/socket-bearer-token.guard';
+import { UsersModel } from 'src/users/entities/users.entity';
 
 @WebSocketGateway({
   // ws://localhost:3000/chats
@@ -32,22 +41,46 @@ export class ChatsGateway implements OnGatewayConnection {
     console.log(`one connect called : ${socket.id}`);
   }
 
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @UseFilters(SocketCatchHttpExceptionFilter)
+  @UseGuards(SocketBearerTokenGuard)
   // 채팅방을 만드는 기능
   @SubscribeMessage('create_chat')
   async createChat(
     @MessageBody() data: CreateChatDto,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: Socket & { user: UsersModel },
   ) {
     const chat = await this.chatsService.createChat(data);
     console.log(chat);
   }
 
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @UseFilters(SocketCatchHttpExceptionFilter)
+  @UseGuards(SocketBearerTokenGuard)
   @SubscribeMessage('enter_chat')
   async enterChat(
     // 방의 chat ID들을 리스트로 받는다.
     @MessageBody() data: EnterChatDto,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: Socket & { user: UsersModel },
   ) {
     for (const chatId of data.chatIds) {
       const exist = await this.chatsService.checkIfChatExists(chatId);
@@ -66,11 +99,23 @@ export class ChatsGateway implements OnGatewayConnection {
   // 오리지널
   // socket.on('send_message', (message) => {console.log(message)})
 
-  // nest.js 버전
+  //
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @UseFilters(SocketCatchHttpExceptionFilter)
+  @UseGuards(SocketBearerTokenGuard)
   @SubscribeMessage('send_message')
   async sendMessage(
     @MessageBody() dto: CreateMessageDto,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: Socket & { user: UsersModel },
   ) {
     const chatExists = await this.chatsService.checkIfChatExists(dto.chatId);
 
@@ -87,7 +132,10 @@ export class ChatsGateway implements OnGatewayConnection {
 
     // 현재 연결된 소켓에만 메시지 보내기
 
-    const message = await this.messageService.createMessage(dto);
+    const message = await this.messageService.createMessage(
+      dto,
+      socket.user.id,
+    );
     console.log(message);
     socket
       // to는 BroadCasting 기능으로 자기 자신은 제외하고, 나머지에 한테 "서버 응답을 보내는 것이다."
