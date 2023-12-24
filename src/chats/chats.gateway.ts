@@ -13,13 +13,18 @@ import { Server, Socket } from 'socket.io';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatsService } from './chats.service';
 import { EnterChatDto } from './dto/enter-chat.dto';
+import { CreateMessageDto } from './messages/dto/create-messages.dto';
+import { ChatsMessagesService } from './messages/message.service';
 
 @WebSocketGateway({
   // ws://localhost:3000/chats
   namespace: 'chats',
 })
 export class ChatsGateway implements OnGatewayConnection {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(
+    private readonly chatsService: ChatsService,
+    private readonly messageService: ChatsMessagesService,
+  ) {}
   @WebSocketServer()
   server: Server;
   handleConnection(socket: Socket) {
@@ -31,6 +36,7 @@ export class ChatsGateway implements OnGatewayConnection {
   @SubscribeMessage('create_chat')
   async createChat(
     @MessageBody() data: CreateChatDto,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     @ConnectedSocket() socket: Socket,
   ) {
     const chat = await this.chatsService.createChat(data);
@@ -62,10 +68,17 @@ export class ChatsGateway implements OnGatewayConnection {
 
   // nest.js 버전
   @SubscribeMessage('send_message')
-  sendMessage(
-    @MessageBody() message: { message: string; chatId: number },
+  async sendMessage(
+    @MessageBody() dto: CreateMessageDto,
     @ConnectedSocket() socket: Socket,
   ) {
+    const chatExists = await this.chatsService.checkIfChatExists(dto.chatId);
+
+    if (!chatExists) {
+      throw new WsException(
+        `존재 하지 않는 채팅방 입니다. ChatId : ${dto.chatId}`,
+      );
+    }
     // 모든 소켓들에게 메시지를 보냄
     // this.server
     //   // 방에 들어가있는 클라이언트에게만 메시지 전달
@@ -73,8 +86,12 @@ export class ChatsGateway implements OnGatewayConnection {
     //   .emit('receive_message', message.message);
 
     // 현재 연결된 소켓에만 메시지 보내기
+
+    const message = await this.messageService.createMessage(dto);
+    console.log(message);
     socket
-      .to(message.chatId.toString())
+      // to는 BroadCasting 기능으로 자기 자신은 제외하고, 나머지에 한테 "서버 응답을 보내는 것이다."
+      .to(message.chat.id.toString())
       .emit('receive_message', message.message);
   }
 }
