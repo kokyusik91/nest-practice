@@ -4,6 +4,7 @@ import { ImageModel } from 'src/common/entity/image.entity';
 import { stringValidationMessage } from 'src/common/validation-message/string-validation.message';
 import { UsersModel } from 'src/users/entities/users.entity';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { CommentsModel } from '../comments/entity/comments.entity';
 
 @Entity()
 export class PostsModel extends BaseModel {
@@ -36,4 +37,7 @@ export class PostsModel extends BaseModel {
   // 포스트 입장에서는 다수의 이미지를 받기 때문에 OneToMany
   @OneToMany(() => ImageModel, (image) => image.post)
   images: ImageModel[];
+
+  @OneToMany(() => CommentsModel, (comment) => comment.post)
+  comments: CommentsModel[];
 }
