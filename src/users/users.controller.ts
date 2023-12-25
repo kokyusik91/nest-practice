@@ -1,4 +1,15 @@
-import { Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseBoolPipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RoleEnum } from './const/roles.const';
 import { Roles } from './decorator/roles.decorator';
@@ -33,10 +44,15 @@ export class UsersController {
 
   // 현재 로그인 한 사용자의 팔로워들을 가져온다.
   @Get('follow/me')
-  async getFollow(@User() user: UsersModel) {
-    return this.usersService.getFollowers(user.id);
+  async getFollow(
+    @User() user: UsersModel,
+    @Query('includeNotConfirmed', new DefaultValuePipe(false), ParseBoolPipe)
+    includeNotConfirmed: boolean,
+  ) {
+    return this.usersService.getFollowers(user.id, includeNotConfirmed);
   }
 
+  // 내가 상대방 사용자 팔로우 하기 (id는 상대방 사용자)
   @Post('follow/:id')
   async postFollow(
     // 로그인한 사용자가 Follower
@@ -44,6 +60,28 @@ export class UsersController {
     @Param('id', ParseIntPipe) followeeId: number,
   ) {
     await this.usersService.followUser(user.id, followeeId);
+
+    return true;
+  }
+
+  // 나에게 온 팔로위 승인하기 (id는 승인할 팔로위 아이디)
+  @Patch('follow/:id/confirm')
+  async patchFollowConfirm(
+    @User() user: UsersModel,
+    @Param('id', ParseIntPipe) followerId: number,
+  ) {
+    await this.usersService.confirmFollow(followerId, user.id);
+
+    return true;
+  }
+
+  // 나에게 온 팔로위 취소하기 (id는 취소할 팔로위 아이디)
+  @Delete('follow/:id')
+  async deleteFollow(
+    @User() user: UsersModel,
+    @Param('id', ParseIntPipe) followeeId: number,
+  ) {
+    await this.usersService.deleteFollow(user.id, followeeId);
 
     return true;
   }

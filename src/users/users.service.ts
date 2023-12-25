@@ -2,12 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersModel } from './entities/users.entity';
 import { Repository } from 'typeorm';
+import { UserFollowersModel } from './entities/user-followers.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UsersModel)
     private readonly userRepository: Repository<UsersModel>,
+    @InjectRepository(UserFollowersModel)
+    private readonly userFollowRepository: Repository<UserFollowersModel>,
   ) {}
 
   async createUser(user: Pick<UsersModel, 'email' | 'password' | 'nickname'>) {
@@ -57,36 +60,102 @@ export class UsersService {
     });
   }
 
-  async followUser(followersId: number, followeesId: number) {
-    const user = await this.userRepository.findOne({
-      where: {
-        id: followersId,
+  // 팔로우 생성 === 팔로우 하기
+  async followUser(followerId: number, followeeId: number) {
+    await this.userFollowRepository.save({
+      follower: {
+        id: followerId,
       },
-      relations: {
-        followees: true,
+      followee: {
+        id: followeeId,
       },
     });
 
-    if (!user) {
-      throw new BadRequestException('존재하지 않는 팔로워 입니다.');
-    }
-
-    await this.userRepository.save({
-      ...user,
-      followees: [...user.followees, { id: followeesId }],
-    });
+    return true;
   }
 
-  async getFollowers(userId: number): Promise<UsersModel[]> {
-    const user = await this.userRepository.findOne({
-      where: {
+  // 나를 팔로우 하고 있는 사람들 가져오기
+  async getFollowers(userId: number, includeNotConfirmed: boolean) {
+    /**
+     * [
+     *  {
+     *    id : number,
+     *    follower : UsersModel,
+     *    followee : UsersModel,
+     *    isConfirmed : boolean,
+     *    createdAt : Date,
+     *    updatedAt : Date,
+     * }
+     * ]
+     */
+
+    const where = {
+      followee: {
         id: userId,
       },
+    };
+
+    // 컨펌된것들만 추가해라
+    if (!includeNotConfirmed) {
+      where['isConfirmed'] = true;
+    }
+
+    const result = await this.userFollowRepository.find({
+      where,
       relations: {
-        followers: true,
+        follower: true,
+        followee: true,
       },
     });
 
-    return user.followers;
+    return result.map((x) => ({
+      id: x.follower.id,
+      nickname: x.follower.nickname,
+      email: x.follower.email,
+      isConfirmed: x.isConfirmed,
+    }));
+  }
+
+  // 내가 팔로우 온것 승인하기
+  async confirmFollow(followerId: number, followeeId: number) {
+    const existing = await this.userFollowRepository.findOne({
+      where: {
+        follower: {
+          id: followerId,
+        },
+        followee: {
+          id: followeeId,
+        },
+      },
+      relations: {
+        follower: true,
+        followee: true,
+      },
+    });
+
+    if (!existing) {
+      throw new BadRequestException('존재하지 않는 팔로우 요청입니다.');
+    }
+
+    await this.userFollowRepository.save({
+      ...existing,
+      isConfirmed: true,
+    });
+
+    return true;
+  }
+
+  // 내가 팔로우 온것 취소하기
+  async deleteFollow(followerId: number, followeeId: number) {
+    await this.userFollowRepository.delete({
+      follower: {
+        id: followerId,
+      },
+      followee: {
+        id: followeeId,
+      },
+    });
+
+    return true;
   }
 }
