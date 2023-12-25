@@ -10,11 +10,9 @@ import {
   Post,
   Query,
   // UseFilters,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
-import { AccessTokenGuard } from 'src/auth/guard/bearer-token.guard';
 import { User } from 'src/users/decorator/user.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -24,9 +22,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageModelType } from 'src/common/entity/image.entity';
 import { DataSource, QueryRunner as QR } from 'typeorm';
 import { PostsImagesService } from './images.service';
-import { LogInterceptor } from 'src/common/interceptor/log.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
+import { Roles } from 'src/users/decorator/roles.decorator';
+import { RoleEnum } from 'src/users/const/roles.const';
+import { IsPublic } from 'src/common/decorator/is-public.decorator';
 // import { HttpExceptionFilter } from 'src/common/exception-filter/http.exception-filter';
 // import { UsersModel } from 'src/users/entities/users.entity';
 
@@ -40,7 +40,8 @@ export class PostsController {
   ) {}
 
   @Get()
-  @UseInterceptors(LogInterceptor)
+  @IsPublic()
+  // @UseInterceptors(LogInterceptor)
   // @UseFilters(HttpExceptionFilter)
   getPosts(@Query() query: PaginatePostDto) {
     return this.postsService.paginatePosts(query);
@@ -48,7 +49,6 @@ export class PostsController {
 
   // POST /posts/random
   @Post('random')
-  @UseGuards(AccessTokenGuard)
   async postPostRandom(@User() user: UsersModel) {
     await this.postsService.generatePosts(user.id);
     return true;
@@ -56,13 +56,13 @@ export class PostsController {
 
   // path parameter
   @Get(':id')
+  @IsPublic()
   getPost(@Param('id', ParseIntPipe) id: number) {
     return this.postsService.getPostById(id);
   }
 
   @Post()
   // AccessToken 없이는 밑에 로직이 실행되지 않는다.
-  @UseGuards(AccessTokenGuard)
   @UseInterceptors(FileInterceptor('image'))
   // 트랜잭션 시작
   @UseInterceptors(TransactionInterceptor)
@@ -110,6 +110,8 @@ export class PostsController {
   }
 
   @Delete(':id')
+  // req.roles에 있는 type가지고 어드민인지 확인
+  @Roles(RoleEnum.ADMIN)
   deletePost(@Param('id', ParseIntPipe) id: number) {
     return this.postsService.deletePost(id);
   }

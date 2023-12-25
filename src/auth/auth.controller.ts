@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { BasicTokenGuard } from './guard/basic-token.guard';
 import { AccessTokenGuard } from './guard/bearer-token.guard';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { IsPublic } from 'src/common/decorator/is-public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +16,7 @@ export class AuthController {
 
   // AccessToken 새로 발급 받는 api
   @Post('token/access')
+  @IsPublic()
   @UseGuards(AccessTokenGuard)
   postTokenAccess(@Headers('authorization') rawToken: string) {
     const token = this.authService.extractTokenFromHeader(rawToken, true);
@@ -31,6 +33,7 @@ export class AuthController {
 
   // RefreshToken 새로 발급 받는 api
   @Post('token/refresh')
+  @IsPublic()
   @UseGuards(AccessTokenGuard)
   postRefreshAccess(@Headers('authorization') rawToken: string) {
     const token = this.authService.extractTokenFromHeader(rawToken, true);
@@ -48,6 +51,7 @@ export class AuthController {
   // header에서 basic token을 받아 email, password로 분리
   // email:password -> base64
   @Post('login/email')
+  @IsPublic()
   @UseGuards(BasicTokenGuard)
   postLoginEmail(@Headers('authorization') rawToken: string) {
     const token = this.authService.extractTokenFromHeader(rawToken, false);
@@ -57,6 +61,7 @@ export class AuthController {
 
   // 회원 가입 => RegisterUserDto + Class validator 사용
   @Post('register/email')
+  @IsPublic()
   postRegisterEmail(@Body() body: RegisterUserDto) {
     return this.authService.registerWithEmail(body);
   }
